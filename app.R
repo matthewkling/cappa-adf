@@ -39,12 +39,12 @@ ui <- fluidPage(
                    actionButton("about", "about"),
                    hr()),
             column(10,
-                   leafletOutput("mymap", height = "calc(100vh - 210px)"))
+                   leafletOutput("map", height = "calc(100vh - 80px)"))
       )
       
 )
 
-server <- function(input, output) {
+server <- function(input, output, session) {
       
       data <- reactive({
             if(input$tree == "species") d <- readRDS("data/data_species.rds")
@@ -65,7 +65,7 @@ server <- function(input, output) {
       
       # identify user-clicked grid cell
       selected_cell <- reactive({
-            clicked <- input$mymap_shape_click
+            clicked <- input$map_shape_click
             if(is.null(clicked)){
                   point <- sample(1944, 1)
             }else{
@@ -100,50 +100,38 @@ server <- function(input, output) {
       })
       
       # basemap
-      output$mymap <- renderLeaflet({
+      output$map <- renderLeaflet({
             leaflet(g) %>%
                   setView(-120, 37, zoom = 6) %>%
                   addMapPane("background_map", zIndex = 1) %>% 
                   addMapPane("polygons", zIndex = 2) %>% 
-                  addMapPane("labels", zIndex = 3) %>%  
-                  addMapPane("top", zIndex = 4) %>% 
+                  addMapPane("top", zIndex = 3) %>% 
                   addProviderTiles(providers$Esri.WorldTerrain,
-                                   options = pathOptions(pane = "background_map")) %>%
-                  addProviderTiles(providers$Stamen.TonerLabels,
-                                   options = pathOptions(pane = "labels", opacity=.65)) %>%
-                  addProviderTiles(providers$Stamen.TonerLines,
-                                   options = pathOptions(pane = "labels", opacity=.5))
+                                   options = pathOptions(pane = "background_map"))
       })
       
       # grid cells layer -- updates with changes to map data
       observe({
             pal <- map_data()$pal
-            # leafletProxy("mymap", data=map_data()$grid) %>%
-            #       addPolygons(layerId=map_data()$grid$id,
-            #                   color="gray90", weight=.1,
-            #                   fillColor= ~pal(values), fillOpacity=input$opacity,
-            #                   highlightOptions = highlightOptions(color = "blue", weight = 6, bringToFront = TRUE),
-            #                   options=pathOptions(pane="polygons"))
-            leafletProxy("mymap", data=map_data()$grid) %>%
-                  addPolygons(#layerId=map_data()$grid$id,
-                              color="gray90", weight=.1,
+            centroid <- map_data()$centroid
+            leafletProxy("map", session, data=map_data()$grid) %>%
+                  clearMarkers() %>%
+                  addPolygons(color="gray90", weight=.1,
                               fillColor= ~pal(values), fillOpacity=input$opacity,
                               highlightOptions = highlightOptions(color = "blue", weight = 6, bringToFront = TRUE),
-                              options=pathOptions(pane="polygons"))
+                              options=pathOptions(pane="polygons")) %>%
+                  addCircleMarkers(lng = centroid[1], lat = centroid[2],
+                                   color = "cyan", opacity = 1, fill = FALSE,
+                                   options=pathOptions(pane="top"))
       })
       
       # selected cell -- updates with map click
       observe({
-            # browser()
-            centroid <- map_data()$centroid
-            leafletProxy("mymap") %>%
-                  clearMarkers() %>% clearImages() %>% clearControls() %>%
-                  addPolygons(data=selected_cell()$shape %>% setNames(NULL),
+            leafletProxy("map", session, deferUntilFlush = T) %>%
+                  addPolygons(data=selected_cell()$shape,
                               layerId="selected",
                               color="cyan", weight=4, opacity=1, fillColor="transparent",
-                              options=pathOptions(pane="top")) %>%
-                  addCircleMarkers(lng = centroid[1], lat = centroid[2],
-                             color = "cyan", opacity = 1, fill = FALSE)
+                              options=pathOptions(pane="top"))
       })
       
       observeEvent(input$about, {
