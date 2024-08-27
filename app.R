@@ -120,11 +120,11 @@ server <- function(input, output, session) {
                               highlightOptions = highlightOptions(color = "blue", weight = 6, bringToFront = TRUE),
                               options=pathOptions(pane="polygons")) %>%
                   addCircleMarkers(lng = centroid[1], lat = centroid[2],
-                                   color = "cyan", opacity = 1, fill = FALSE,
+                                   color = "red", opacity = 1, weight = 2, fill = FALSE,
                                    options=pathOptions(pane="top")) %>%
                   addPolygons(data=selected_cell()$shape,
                               layerId="selected",
-                              color="cyan", weight=4, opacity=1, fillColor="transparent",
+                              color="red", weight=2, opacity=1, fillColor="transparent",
                               options=pathOptions(pane="top"))
       })
       
