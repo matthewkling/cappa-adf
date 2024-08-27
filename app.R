@@ -110,24 +110,18 @@ server <- function(input, output, session) {
                                    options = pathOptions(pane = "background_map"))
       })
       
-      # grid cells layer -- updates with changes to map data
       observe({
             pal <- map_data()$pal
             centroid <- map_data()$centroid
             leafletProxy("map", session, data=map_data()$grid) %>%
-                  clearMarkers() %>%
+                  clearMarkers() %>% clearShapes() %>%
                   addPolygons(color="gray90", weight=.1,
                               fillColor= ~pal(values), fillOpacity=input$opacity,
                               highlightOptions = highlightOptions(color = "blue", weight = 6, bringToFront = TRUE),
                               options=pathOptions(pane="polygons")) %>%
                   addCircleMarkers(lng = centroid[1], lat = centroid[2],
                                    color = "cyan", opacity = 1, fill = FALSE,
-                                   options=pathOptions(pane="top"))
-      })
-      
-      # selected cell -- updates with map click
-      observe({
-            leafletProxy("map", session, deferUntilFlush = T) %>%
+                                   options=pathOptions(pane="top")) %>%
                   addPolygons(data=selected_cell()$shape,
                               layerId="selected",
                               color="cyan", weight=4, opacity=1, fillColor="transparent",
