@@ -39,7 +39,7 @@ ui <- fluidPage(
                    actionButton("about", "about"),
                    hr()),
             column(10,
-                   leafletOutput("mymap", height = 800))
+                   leafletOutput("mymap", height = "calc(100vh - 210px)"))
       )
       
 )
@@ -118,8 +118,14 @@ server <- function(input, output) {
       # grid cells layer -- updates with changes to map data
       observe({
             pal <- map_data()$pal
+            # leafletProxy("mymap", data=map_data()$grid) %>%
+            #       addPolygons(layerId=map_data()$grid$id,
+            #                   color="gray90", weight=.1,
+            #                   fillColor= ~pal(values), fillOpacity=input$opacity,
+            #                   highlightOptions = highlightOptions(color = "blue", weight = 6, bringToFront = TRUE),
+            #                   options=pathOptions(pane="polygons"))
             leafletProxy("mymap", data=map_data()$grid) %>%
-                  addPolygons(layerId=map_data()$grid$id,
+                  addPolygons(#layerId=map_data()$grid$id,
                               color="gray90", weight=.1,
                               fillColor= ~pal(values), fillOpacity=input$opacity,
                               highlightOptions = highlightOptions(color = "blue", weight = 6, bringToFront = TRUE),
@@ -128,13 +134,14 @@ server <- function(input, output) {
       
       # selected cell -- updates with map click
       observe({
+            # browser()
             centroid <- map_data()$centroid
             leafletProxy("mymap") %>%
-                  addPolygons(data=selected_cell()$shape,
+                  clearMarkers() %>% clearImages() %>% clearControls() %>%
+                  addPolygons(data=selected_cell()$shape %>% setNames(NULL),
                               layerId="selected",
                               color="cyan", weight=4, opacity=1, fillColor="transparent",
                               options=pathOptions(pane="top")) %>%
-                  clearMarkers() %>%
                   addCircleMarkers(lng = centroid[1], lat = centroid[2],
                              color = "cyan", opacity = 1, fill = FALSE)
       })
